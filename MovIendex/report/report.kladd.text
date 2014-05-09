@@ -1,0 +1,12 @@
+Målet:
+Skap en scraper som kan scrape filmer, og bygge søkbare indekser over disse filmene.
+Data hentes fra Wikipedia, IMDB, OMDB, RottenTomatoes, og evt. fler.
+
+Problemer underveis:
+IMDB har en restriktiv lisens for å brukes, for å unngå juridiske overtramp, forkastes dermed IMDB, og OMDB/RT brukes istedenfor.
+
+Utfordringer generelt sett:
+Hvordan skal indekser lagres? Filformat/Databaseskjema.
+Hvordan skal data parses ut av de forskjellige nettstedene?
+Hvilke data skal brukes?
+Hvilke stoppord skal brukes?
