@@ -7,8 +7,9 @@ import java.util.Set;
 
 /**
  * A basic table of words, movies and their number of entries.
- * If you mute the Movie objects after indexing them the indexer will fuck up in interesting ways.
+ * If you mutate the Movie objects after indexing them the indexer will fuck up in interesting ways.
  * You have been warned.
+ * 
  * @author Haakon Løtveit (haakon.lotveit@student.uib.no)
  *
  */

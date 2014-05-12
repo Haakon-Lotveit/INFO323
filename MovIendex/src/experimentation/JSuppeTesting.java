@@ -13,6 +13,7 @@ import java.util.Set;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class JSuppeTesting {
 	public static void main(String[] args) throws Exception {
@@ -20,6 +21,9 @@ public class JSuppeTesting {
 		String film = "Brother Bear";
 		String year = "2003";
 
+		/**
+		 * safeWords makes us stop immediately, like good people.
+		 */
 		Set<String> safeWords = new HashSet<>();
 		safeWords.add("wikimedia");
 		safeWords.add("wikipedia");
@@ -27,7 +31,7 @@ public class JSuppeTesting {
 		safeWords.add("a");
 		safeWords.add("registered");
 		safeWords.add("trademark");
-		
+				
 		Map<String, Integer> wordFrequency = new HashMap<>();
 		
 		List<String> candidates = new LinkedList<>();
@@ -62,15 +66,29 @@ public class JSuppeTesting {
 				String best = String.format("http://%s%s", wikipediaDomain, bestUrl(candidates, year));
 				doc = Jsoup.connect(best).get();
 			}
-			System.out.println(disambigPage);
-			System.out.println(noPage);
 			
-			//So now we've got a page. How do we get the text out of it?
-			for(String hopeFullyWord : doc.text().replaceAll("[^\\w]", " ").split("\\s+")){
-				if(!safeWords.contains(hopeFullyWord)){
-					System.out.println(hopeFullyWord.toLowerCase());
+			/*
+			 * So now we've got a page. How do we get the text out of it?
+			 * We grab all the paragraphs, and remove all the references, they're of no import.
+			 * Then we replace all non-word characters with space, and split on whitespace.
+			 * I WISH I HAD JAVA 8 FOR THIS.
+			 * PLEASE BE CAN IT BE STREAMS TIEM SOON PLOX?
+			 */
+			
+			for(String hopeFullyWord : doc.select("p").text().replaceAll("\\[\\d+\\]", " ").replaceAll("[^\\w]", " ").split("\\s+")){
+				String cand = hopeFullyWord.toLowerCase();
+				if(!safeWords.contains(cand) && !cand.matches("^\\d+$")){
+					if(!wordFrequency.containsKey(cand)){
+						wordFrequency.put(cand, Integer.valueOf(1));
+					}
+					else{
+						wordFrequency.put(cand,
+								          wordFrequency.get(cand) + 1);
+					}
 				}
 			}
+			
+			System.out.println(wordFrequency);
 		}
 	}
 	
