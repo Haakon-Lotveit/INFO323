@@ -1,0 +1,8 @@
+Indexing and goals:
+Since documents will be registered relatively rarely\footnote{In comparison to general purpose web-crawlers}, indexing time is not considered a big issue.
+Nor will we care too much about the index-size. Although the book says that it should grow linearly with the size of the data, this is a truth with certain modifications in our case: A movie here does not contain the movie itself, only metadata about it. Therefore we do not need to consider mass scaling issues.
+
+A cursory search of IMDB, gives us a ballpark estimate of 500 thousand to 2,5 million movies made in total. If this index is to fit in memory of a system with say, ~5gb of core memory available to it, that gives us that in memory the memory devoted to each movie entry in total could not be larger than 1-5kb. This either means heavy constraints on the indexing, paging to disk, or loading from disk only parts of movies. There are systems that lets us page efficiently, such as a RDBMS like MySQL, PostgreSQL, or other free systems. These systems would be obvious matches. Even though they don't scale well beyond the petabyte, it is unlikely that such storage capacity will be needed.
+
+Inverted indexes do not make much sense in our case, since the metadata does not generally consist of large text. The exception to this would be the abstract. However, there is no reason to create inverted indexes for everything.
+
