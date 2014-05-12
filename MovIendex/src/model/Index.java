@@ -16,8 +16,7 @@ import java.util.Set;
 public class Index {
 	Map<String, Map<Movie, Integer>> table;
 	Map<Movie, String> abstracts;
-	Set<String> stopwords;
-	
+	final Set<String> stopWords = evil.Globals.safeWords;
 	private void init(){
 		table = new HashMap<>();
 	}
@@ -27,14 +26,17 @@ public class Index {
 	}
 	
 	public Index addMovie(Movie mov){
+		/*
+		 * Start by going over the data and abstracts.
+		 */
 		Set<String> words = new HashSet<>();
 		for(String datapoint : mov.getDataNames()){
 			/* Hopelessly naïve way to get words out of a string. */
 			for(String hopefullyAWord : mov.getData(datapoint).replaceAll("\\W", " ").replaceAll("\n", " ").toLowerCase().split("\\s")){
-				if(!stopwords.contains(hopefullyAWord)){
+				if(!stopWords.contains(hopefullyAWord) && hopefullyAWord.length() > 0){
 					words.add(hopefullyAWord);
 				}
-			}
+			}			
 		}
 		
 		for(String searchTerm : words){
@@ -53,6 +55,17 @@ public class Index {
 				}
 			}
 		}
+		
+		/*
+		 * Then consume their word-frequencies
+		 */
+		
+		for(Map<String, Integer>  wordFreq : mov.getWordFrequencies().values()){
+			for(String key : wordFreq.keySet()){
+				
+			}
+		}
+		
 		return this;
 	}
 	
@@ -62,20 +75,22 @@ public class Index {
 			 	  				 .setData("studio"  , "Walt Disney Pictures")
 			 	  				 .setData("year"    , "2013")
 				  				 .setData("producer", "Peter Del Vecho")
-				  				 .setAbstract("Fearless optimist Anna teams up with Kristoff in an epic journey, encountering Everest-like conditions, and a hilarious snowman named Olaf in a race to find Anna's sister Elsa, whose icy powers have trapped the kingdom in eternal winter."))
+				  				 .setAbstract("Fearless optimist Anna teams up with Kristoff in an epic journey, encountering Everest-like conditions, and a hilarious snowman named Olaf in a race to find Anna's sister Elsa, whose icy powers have trapped the kingdom in eternal winter.")
+				  				 .downloadWikipedia())
 				  				 
 			.addMovie(new Movie().setData("title"   , "Wreck-it Ralph")
 								 .setData("year"    , "2012")
 								 .setData("studio"  , "Walt Disney Pictures")
 								 .setData("producer", "Clark Spencer")
-								 .setAbstract("A video game villain wants to be a hero and sets out to fulfill his dream, but his quest brings havoc to the whole arcade where he lives."))
+								 .setAbstract("A video game villain wants to be a hero and sets out to fulfill his dream, but his quest brings havoc to the whole arcade where he lives.")
+								 .downloadWikipedia())
 								 
 			.addMovie(new Movie().setData("title"   , "Despicable Me 2")
 								 .setData("studio"  , "Illumination Entertainment")
 								 .setData("year"    , "2013")
 								 .setData("producer", "Chris Meledandri, Janet Healy")
 								 .setAbstract("Gru is recruited by the Anti-Villain League to help deal with a powerful new super criminal.")
-					);
+								 .downloadWikipedia());
 		System.out.println(ind);
 	}
 	
