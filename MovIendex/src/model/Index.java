@@ -59,12 +59,7 @@ public class Index {
 		/*
 		 * Then consume their word-frequencies
 		 */
-		
-		for(Map<String, Integer>  wordFreq : mov.getWordFrequencies().values()){
-			for(String key : wordFreq.keySet()){
-				
-			}
-		}
+		// TODO: ↑
 		
 		return this;
 	}

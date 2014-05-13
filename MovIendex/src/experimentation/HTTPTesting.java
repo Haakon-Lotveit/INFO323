@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Scanner;
 
+import javax.naming.InsufficientResourcesException;
+
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -31,158 +33,117 @@ import org.apache.http.util.EntityUtils;
 public class HTTPTesting{
 
 	public static void main(String[] args) throws Exception {
-		String wikipediaDomain = "en.wikipedia.org";
+		String wikipediaDomain = "www.omdbapi.com";
 		String film = "Frozen";
 		String year = "2013";
+
+		String req = new OmdbRequestBuilder().title(film)
+				                             .year(year)
+				                             .getLongPlot()
+				                             .returnJSON()
+				                             .request();
+		System.out.println(req);
+		//		http://www.omdbapi.com/?t=Frozen&y=2013&plot=full&tomatoes=false&response=JSON
+	}
+
+	/* TODO: Move these into javadocs for the class.
+	s (NEW!) 	string (optional) 	title of a movie to search for
+	i 	string (optional) 	a valid IMDb movie id
+	t 	string (optional) 	title of a movie to return
+	y 	year (optional) 	year of the movie
+	r 	JSON, XML 	response data type (JSON default)
+	plot 	short, full 	short or extended plot (short default)
+	callback 	name (optional) 	JSONP callback name
+	tomatoes 	true (optional) 	adds rotten tomatoes data 
+	 */
+	/**
+	 * A builder that returns a valid request for the OMDB api.
+	 * This does not allow you to build ALL the requests you may want,
+	 * but sticks to what is deemed an acceptable amount.
+	 * (You can't set the s-parameter, and it doesn't take an IMDB identifier)
+	 * 
+	 * It's made for an INFO323 project, 
+	 * and is not supposed to be some great greatness that solves everything for everyone.
+	 * (IOW, if it doesn't work for you, build your own builder. ^_^)
+	 * 
+	 * @author Haakon Løtveit (email: haakon.lotveit@student.uib.no)
+	 *
+	 */
+	public static class OmdbRequestBuilder {
+		String title, year;
+		boolean tomatoData, callbackName, longPlot, returnXML;
 		
-//		String wikipedia = get("en.wikipedia.org", 80, String.format("/wiki/%s", film));
+		public OmdbRequestBuilder(){
+			title = year = null;
+			tomatoData = longPlot = returnXML = false;
+		}
 		
-//		String[] promisingLines = grepForFilms(wikipedia);
+		public boolean validate(){
+			return (null != title &&
+					null != year);
+		}
+		
+		public OmdbRequestBuilder getTomatoData(){
+			this.tomatoData = true;
+			return this;
+		}
+		
+		public OmdbRequestBuilder dontGetTomatoData(){
+			this.tomatoData = false;
+			return this;
+		}
+		
+		public OmdbRequestBuilder getShortPlot(){
+			this.longPlot = false;
+			return this;
+		}
+		
+		public OmdbRequestBuilder getLongPlot(){
+			this.longPlot = true;
+			return this;
+		}
+		
+		public OmdbRequestBuilder returnXML(){
+			this.returnXML = true;
+			return this;
+		}
+		
+		public OmdbRequestBuilder returnJSON(){
+			this.returnXML = false;
+			return this;
+		}
+		
+		public OmdbRequestBuilder title(String title){
+			this.title = title;
+			return this;
+		}
+		
+		public OmdbRequestBuilder year(String year){
+			this.year = year;
+			return this;
+		}
+		
+		
+		public String request() throws Exception {
+			if(!validate()){
+				throw new Exception("you haven't instantiated everything!");
+			}
+			String host = "www.omdbapi.com";
+			String target = String.format("/?t=%s&y=%s&plot=%s&tomatoes=%s&response=%s", 
+									      title,
+		                                  year,
+		                                  longPlot?   "full" : "short",
+		                                  tomatoData? "true" : "false",
+		                                  returnXML?  "XML"  : "JSON");
 			
-//		String[] urls = urlsFromHref(promisingLines);
-		
-//		String bestUrl = bestUrl(urls, year);
-			
-//		System.out.printf("Best URL: %s%n", bestUrl);
-//		System.out.println(Arrays.toString(urls));
-		
-//		String bestWikipediaPage = get(wikipediaDomain, 80, bestUrl);
-		
-//		System.out.println(bestWikipediaPage);
-//		try(FileWriter fw = new FileWriter(new File("frozen.wikipedia.html"))){
-//			fw.write(bestWikipediaPage);
-//		}
-		
-		String bestWikipediaPage = "";
-		
-		try(Scanner wikislurp = new Scanner(new File("frozen.wikipedia.html"))){
-			bestWikipediaPage = wikislurp.useDelimiter("\\Z").next();
+			String req = get(host, 80, target);
+			System.out.println(req);
+			return String.format("http://%s/%s",
+							     host,
+							     target);
+					             
 		}
-		
-		System.out.println(bestWikipediaPage.length());
-		System.out.println("BEFORE STRIPPING COMMENTS");
-		bestWikipediaPage = stripComments(bestWikipediaPage);
-		System.out.println(bestWikipediaPage.length());
-		System.out.println("AFTER STRIPPING COMMENTS");
-		
-		bestWikipediaPage = cutHeaders(bestWikipediaPage);
-		
-		System.out.println(bestWikipediaPage.length());
-		System.out.println("AFTER CUTTING HEADERS");
-		
-		
-		bestWikipediaPage = cutExtraneousWikipedia(bestWikipediaPage);
-		System.out.println(bestWikipediaPage.length());
-		System.out.println("AFTER CUTTING EXTRANEOUS");
-		
-		System.out.println(bestWikipediaPage);
-	}
-	
-	
-	public static String cutExtraneousWikipedia(String page){
-		int open   = page.indexOf("<");
-		int closed = page.indexOf(">");
-		while(open >= 0 && closed >= 0 && closed > open){
-			page = page.substring(open, closed);
-			open   = page.indexOf("<");
-			closed = page.indexOf(">");
-		}
-		return page;
-	}
-	
-	public static String stripComments(String page){
-		int commentLevel = 0;
-		StringBuilder noComments = new StringBuilder();
-		char[] string = page.toCharArray();
-		
-		for(int i = 0; i < string.length; ++i){
-			/* Beginning of an html comment */
-			if(string[i]   == '<' &&
-			   string[i+1] == '!' &&
-			   string[i+2] == '-' &&
-			   string[i+3] == '-'){			
-				++commentLevel;
-				i += 3;
-			}
-			/* We have an html comment ending. */
-			else if(string[i]   == '-' &&
-					string[i+1] == '-' &&
-					string[i+2] == '>'){
-				--commentLevel;
-				i += 2;
-			}
-			/* We're not incommented out html, so we append the char. */
-			else if(0 == commentLevel){
-				noComments.append(string[i]);
-			}
-		}
-		
-		return noComments.toString();
-	}
-	
-	public static String cutHeaders(String page){
-		return page.substring(page.indexOf("</head>"));
-	}
-	
-	public static String bestUrl(String[] urls, final String year){
-		Comparator<String> cmp = new Comparator<String>() {
-			@Override
-			public int compare(String s1, String s2) {				
-				int s1Score = 0, s2Score = 0;
-				// Make the score for hitting the correct year high enough that it cannot be dwarfed by string lengths.
-				// Note that if strings get long enough, this won't help us, but since valid URLs are defined with a maximum length, we should be good here.
-				int yearScore = s1.length() + s2.length();
-				s1Score -= s1.length();
-				s2Score -= s2.length();
-				if(s1.contains(year)){
-					s1Score += yearScore;
-				}
-				if(s2.contains(year)){
-					s2Score += yearScore;
-				}				
-				return s2Score - s1Score;
-			}
-			
-		};
-		Arrays.sort(urls, cmp);
-		return urls[0];
-	}
-	
-	public static String[] urlsFromHref(String[] hrefs){
-		String[] urls = new String[hrefs.length];
-		
-		String preCut = "<a href=\"";
-		String postCut = "\" title";
-		for(int i = 0; i < hrefs.length; ++i){
-			urls[i] = hrefs[i].substring(hrefs[i].indexOf(preCut) + preCut.length(),
-										 hrefs[i].indexOf(postCut));
-		}
-		
-		return urls;
-	}
-	
-	public static String[] grepForFilms(String html){
-		// cut from and up til this string. Quick, dirty and Wikipedia specific.
-		String fromThis= "<p><b>Frozen</b> may refer to:</p>";
-		String toThis = "<table id=\"disambigbox\" class=\"metadata plainlinks dmbox dmbox-disambig\" style=\"\" role=\"presentation\">";
-		html = html.substring(html.indexOf(fromThis) + fromThis.length(), html.indexOf(toThis));
-		
-		ArrayList<String> containsFilms = new ArrayList<>();
-		/* We assume that the interesting bits of the film is in li tags.
-		   Furthermore we assume that there is a link there somewhere. */
-		String hrefStart = "<a href";
-		String hrefEnd = "</a>";
-		for(String line : html.split("\\<\\/li\\>")){
-			if(line.contains("film") && line.contains("href")){
-				String possible = line.substring(line.indexOf(hrefStart), 
-												 line.indexOf(hrefEnd));
-				if(possible.contains("film")){
-					containsFilms.add(possible);
-				}
-			}
-		}
-		
-		return containsFilms.toArray(new String[0]);
+
 	}
 	/**
 	 * Copypasted from the HttpCore tutorial.
