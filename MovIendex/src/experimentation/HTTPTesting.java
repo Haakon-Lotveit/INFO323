@@ -7,9 +7,13 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import javax.naming.InsufficientResourcesException;
+
+import model.Movie;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -27,24 +31,69 @@ import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.apache.http.util.EntityUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Elemental example for executing multiple GET requests sequentially.
  */
 public class HTTPTesting{
 
 	public static void main(String[] args) throws Exception {
-		String wikipediaDomain = "www.omdbapi.com";
-		String film = "Frozen";
-		String year = "2013";
+		Movie m = new Movie().setData("title", "Frozen")
+				.setData("year", "2013");
 
-		String req = new OmdbRequestBuilder().title(film)
-				                             .year(year)
-				                             .getLongPlot()
-				                             .returnJSON()
-				                             .request();
+		String req = new OmdbRequestBuilder().title(m.getData("title"))
+				.year(m.getData("year"))
+				.getLongPlot()
+				.returnJSON()
+				.getTomatoData()
+				.request();
 		System.out.println(req);
 		//		http://www.omdbapi.com/?t=Frozen&y=2013&plot=full&tomatoes=false&response=JSON
+
+		Map<String,String> json = new HashMap<String,String>();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			//convert JSON string to Map
+			json = mapper.readValue(req, 
+					new TypeReference<HashMap<String,String>>(){});
+
+			System.out.println(json);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		Map<String, Integer> rottenTomatoes = new HashMap<>();
+		Map<String, Integer> omdbPlot = new HashMap<>();
+		m.setAbstract(json.get("tomatoConsensus"))
+		 .setData("website", json.get("Website"))
+		 .setData("poster_url", json.get("Poster"))
+		 .setData("age-rating", json.get("Rated"))
+		 .setData("imdbRating", json.get("imdbRating"))
+		 .setData("actors", json.get("Actors"))
+		 .setData("metascore", json.get("Metascore"))
+		 .setData("tomato-meter", json.get("tomatoMeter"))
+		 .setData("tomato-user-rating", json.get("tomatoUserRating"))
+		 .setData("genre", json.get("Genre"))
+		 .setData("awards", json.get("Awards"))
+		 .setData("director", json.get("Director"))
+		 .setData("tomato-rating", json.get("tomatoRating"))
+		 .setData("runtime", json.get("Runtime"))
+		 .setData("writer", json.get("Writer"))
+		 .setData("production", json.get("Production"))
+		 .setData("language", json.get("Language"))
+		 .setData("tomato-user-meter", json.get("tomatoUserMeter"))
+		 .downloadWikipedia();
+		for(String key : json.keySet()){
+			System.out.printf("%s → %s%n", key, json.get(key));
+		}
+		System.out.println(m);
+
 	}
+
+
 
 	/* TODO: Move these into javadocs for the class.
 	s (NEW!) 	string (optional) 	title of a movie to search for
@@ -72,78 +121,73 @@ public class HTTPTesting{
 	public static class OmdbRequestBuilder {
 		String title, year;
 		boolean tomatoData, callbackName, longPlot, returnXML;
-		
+
 		public OmdbRequestBuilder(){
 			title = year = null;
 			tomatoData = longPlot = returnXML = false;
 		}
-		
+
 		public boolean validate(){
 			return (null != title &&
 					null != year);
 		}
-		
+
 		public OmdbRequestBuilder getTomatoData(){
 			this.tomatoData = true;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder dontGetTomatoData(){
 			this.tomatoData = false;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder getShortPlot(){
 			this.longPlot = false;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder getLongPlot(){
 			this.longPlot = true;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder returnXML(){
 			this.returnXML = true;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder returnJSON(){
 			this.returnXML = false;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder title(String title){
 			this.title = title;
 			return this;
 		}
-		
+
 		public OmdbRequestBuilder year(String year){
 			this.year = year;
 			return this;
 		}
-		
-		
+
 		public String request() throws Exception {
 			if(!validate()){
 				throw new Exception("you haven't instantiated everything!");
 			}
 			String host = "www.omdbapi.com";
 			String target = String.format("/?t=%s&y=%s&plot=%s&tomatoes=%s&response=%s", 
-									      title,
-		                                  year,
-		                                  longPlot?   "full" : "short",
-		                                  tomatoData? "true" : "false",
-		                                  returnXML?  "XML"  : "JSON");
-			
+					title,
+					year,
+					longPlot?   "full" : "short",
+							tomatoData? "true" : "false",
+									returnXML?  "XML"  : "JSON");
 			String req = get(host, 80, target);
 			System.out.println(req);
-			return String.format("http://%s/%s",
-							     host,
-							     target);
-					             
-		}
+			return req;
 
+		}
 	}
 	/**
 	 * Copypasted from the HttpCore tutorial.
