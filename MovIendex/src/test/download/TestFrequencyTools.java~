@@ -1,0 +1,44 @@
+package test.download;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+public class TestFrequencyTools {
+
+	@Test
+	public void test() {
+		String testString = 
+Come over the hills my handsome Irish lad
+Come over the hills to your darling
+You choose the road love, and I'll make a vow
+That I'll be your true love forever
+
+Red is the rose by yonder garden grows
+And fair is the lily of the valley
+Clear is the water that flows from the Boyne
+But my love is fairer than any
+
+Down by Killarneys green woods we did stray
+The moon and the stars they were shining
+The moon shone it's rays on his locks of golden hair
+And he swore he'd be my love forever
+
+Red is the rose by yonder garden grows
+And fair is the lily of the valley
+Clear is the water that flows from the Boyne
+But my love is fairer than any
+
+It's not for the parting that my sister pains
+It's not for the grief of my mother
+It's all for the loss of my handsome Irish lad
+Now my heart is broken forever
+
+Red is the rose by yonder garden grows
+And fair is the lily of the valley
+Clear is the water that flows from the Boyne
+But my love is fairer than any
+"
+	}
+
+}

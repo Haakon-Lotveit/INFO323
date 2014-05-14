@@ -1,17 +1,10 @@
 package experimentation;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
-
-import javax.naming.InsufficientResourcesException;
 
 import model.Movie;
 
@@ -34,6 +27,8 @@ import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import download.FrequenceTools;
+
 /**
  * Elemental example for executing multiple GET requests sequentially.
  */
@@ -42,7 +37,10 @@ public class HTTPTesting{
 	public static void main(String[] args) throws Exception {
 		Movie m = new Movie().setData("title", "Frozen")
 				.setData("year", "2013");
-
+		download(m);
+	}
+	
+	public static void download(Movie m) throws Exception {
 		String req = new OmdbRequestBuilder().title(m.getData("title"))
 				.year(m.getData("year"))
 				.getLongPlot()
@@ -89,6 +87,12 @@ public class HTTPTesting{
 		for(String key : json.keySet()){
 			System.out.printf("%s → %s%n", key, json.get(key));
 		}
+		Map<String, Integer> plotFreq = FrequenceTools.wordsToFrequencyMap(json.get("Plot"));
+		Map<String, Integer> consensusFreq = FrequenceTools.wordsToFrequencyMap(json.get("tomatoConsensus"));
+		
+		System.out.println(plotFreq);
+		System.out.println(consensusFreq);
+		
 		System.out.println(m);
 
 	}

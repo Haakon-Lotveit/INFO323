@@ -63,18 +63,9 @@ public class Wikindexer implements Indexer {
 			 * PLEASE BE CAN IT BE STREAMS TIEM SOON PLOX?
 			 */
 			
-			for(String hopeFullyWord : doc.select("p").text().replaceAll("\\[\\d+\\]", " ").replaceAll("[^\\w]", " ").split("\\s+")){
-				String cand = hopeFullyWord.toLowerCase();
-				if(!safeWords.contains(cand) && !cand.matches("^\\d+$")){
-					if(!wordFrequency.containsKey(cand)){
-						wordFrequency.put(cand, Integer.valueOf(1));
-					}
-					else{
-						wordFrequency.put(cand,
-								          wordFrequency.get(cand) + 1);
-					}
-				}
-			}
+			String indexThis = doc.select("p").text().replaceAll("\\[\\d+\\]", " ");
+			wordFrequency = FrequenceTools.wordsToFrequencyMap(indexThis);
+			
 		}
 		
 		/* FINALLY, we're done */
