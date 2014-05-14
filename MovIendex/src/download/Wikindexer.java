@@ -64,7 +64,7 @@ public class Wikindexer implements Indexer {
 			 */
 			
 			String indexThis = doc.select("p").text().replaceAll("\\[\\d+\\]", " ");
-			wordFrequency = FrequenceTools.wordsToFrequencyMap(indexThis);
+			wordFrequency = Tools.wordsToFrequencyMap(indexThis);
 			
 		}
 		

@@ -64,28 +64,28 @@ public class Index {
 		return this;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		Index ind = new Index()
 			.addMovie(new Movie().setData("title"   , "Frozen")
 			 	  				 .setData("studio"  , "Walt Disney Pictures")
 			 	  				 .setData("year"    , "2013")
 				  				 .setData("producer", "Peter Del Vecho")
 				  				 .setAbstract("Fearless optimist Anna teams up with Kristoff in an epic journey, encountering Everest-like conditions, and a hilarious snowman named Olaf in a race to find Anna's sister Elsa, whose icy powers have trapped the kingdom in eternal winter.")
-				  				 .downloadWikipedia())
+				  				 .download())
 				  				 
 			.addMovie(new Movie().setData("title"   , "Wreck-it Ralph")
 								 .setData("year"    , "2012")
 								 .setData("studio"  , "Walt Disney Pictures")
 								 .setData("producer", "Clark Spencer")
 								 .setAbstract("A video game villain wants to be a hero and sets out to fulfill his dream, but his quest brings havoc to the whole arcade where he lives.")
-								 .downloadWikipedia())
+								 .download())
 								 
 			.addMovie(new Movie().setData("title"   , "Despicable Me 2")
 								 .setData("studio"  , "Illumination Entertainment")
 								 .setData("year"    , "2013")
 								 .setData("producer", "Chris Meledandri, Janet Healy")
 								 .setAbstract("Gru is recruited by the Anti-Villain League to help deal with a powerful new super criminal.")
-								 .downloadWikipedia());
+								 .download());
 		System.out.println(ind);
 	}
 	

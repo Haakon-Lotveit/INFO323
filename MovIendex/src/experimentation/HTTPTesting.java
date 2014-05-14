@@ -27,7 +27,7 @@ import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import download.FrequenceTools;
+import download.Tools;
 
 /**
  * Elemental example for executing multiple GET requests sequentially.
@@ -83,12 +83,12 @@ public class HTTPTesting{
 		 .setData("production", json.get("Production"))
 		 .setData("language", json.get("Language"))
 		 .setData("tomato-user-meter", json.get("tomatoUserMeter"))
-		 .downloadWikipedia();
+		 .download();
 		for(String key : json.keySet()){
 			System.out.printf("%s → %s%n", key, json.get(key));
 		}
-		Map<String, Integer> plotFreq = FrequenceTools.wordsToFrequencyMap(json.get("Plot"));
-		Map<String, Integer> consensusFreq = FrequenceTools.wordsToFrequencyMap(json.get("tomatoConsensus"));
+		Map<String, Integer> plotFreq = Tools.wordsToFrequencyMap(json.get("Plot"));
+		Map<String, Integer> consensusFreq = Tools.wordsToFrequencyMap(json.get("tomatoConsensus"));
 		
 		System.out.println(plotFreq);
 		System.out.println(consensusFreq);

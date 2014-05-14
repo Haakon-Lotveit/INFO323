@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import download.FrequenceTools;
+import download.Tools;
 
 public class TestFrequencyTools {
 
@@ -44,7 +44,7 @@ public class TestFrequencyTools {
 		    "Clear is the water that flows from the Boyne\n" +
 		    "But my love is fairer than any\n";
 		
-		Map<String, Integer> frequencies = FrequenceTools.wordsToFrequencyMap(testString);
+		Map<String, Integer> frequencies = Tools.wordsToFrequencyMap(testString);
 		frequencies.get("hills");
 		assertEquals("There are three \"boyne\"s, and we didn't get three.", Integer.valueOf(3), frequencies.get("boyne"));
 	}
