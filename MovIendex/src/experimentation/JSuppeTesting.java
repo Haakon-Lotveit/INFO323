@@ -1,143 +1,156 @@
 package experimentation;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
+import download.Tools;
 
 public class JSuppeTesting {
 	public static void main(String[] args) throws Exception {
-		String wikipediaDomain = "en.wikipedia.org";
-		String film = "Brother Bear";
-		String year = "2003";
-
-		/**
-		 * safeWords makes us stop immediately, like good people.
-		 */
-		Set<String> safeWords = new HashSet<>();
-		safeWords.add("wikimedia");
-		safeWords.add("wikipedia");
-		safeWords.add("is");
-		safeWords.add("a");
-		safeWords.add("registered");
-		safeWords.add("trademark");
-				
-		Map<String, Integer> wordFrequency = new HashMap<>();
+		final Map<String, Integer> wordFreq = new JSuppeTesting("Shrek", "2001").download();
+		System.out.println(wordFreq);
+		List<String> wordList = new LinkedList<>(wordFreq.keySet());
 		
-		List<String> candidates = new LinkedList<>();
-		Document doc = null;
-		boolean noPage = false;
-		try{
-			doc = Jsoup.connect(String.format("http://%s/wiki/%s", wikipediaDomain, wikiEscapeChars(film))).get();
+		Collections.sort(wordList, new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				return - (wordFreq.get(o1) - wordFreq.get(o2));
+			}
+		});
+		
+		for(String s : wordList){
+			System.out.printf("%s\t\t%d%n", s, wordFreq.get(s));
 		}
-		catch(IOException ioe){
-			if(ioe.toString().contains("Status=404")){
-				noPage = true;
+	}
+	
+	private final String FILM, YEAR, HOST;
+	public JSuppeTesting(final String film, final String year){
+		this.FILM = film;
+		this.YEAR = year;
+		this.HOST = "www.imsdb.com";
+	}
+	
+	public Map<String, Integer> download() throws Exception {
+		
+		/*
+		 * Step 1:
+		 * Search the website for the gosh-darned script.
+		 * This is an interesting exercise, because you have to post data to the webserver.
+		 * The problem with this from a UX perspective is that you can't search for something,
+		 * and bookmark the result, or share it with anybody else. And there's no reason not to make this possible.
+		 */
+		Document search = Jsoup.connect("http://www.imsdb.com/search.php")
+							   .data("search_query", FILM)
+							   .userAgent("SomePoorStudent")
+							   .post();
+		
+		
+		/*
+		 * Step 2: So now we've got a results page.
+		 * Of course, the results page is shit, (doesn't validate either)
+		 * so we have to carefully sift through the crap to find what we want.
+		 * Notice how everything is in a table. It's like it's 2001, and some drooling kid just pirated MS Frontpage.
+		 * Anyway, what we do is that we find every anchor (<a> tag) that might be a search result, and stash it in a list for processing.
+		 */
+		List<Element> possibleLinks = new LinkedList<>();
+		for(Element e : search.select("td")){
+			/* Which is why we're pretty much just grepping for a specific string. A little markup goes a long way fellas. */
+			if(e.toString().contains(String.format("<h1>Search results for '%s'</h1><p>", FILM))){
+				for(Element someAnchor : e.select("a")){
+					if(someAnchor.toString().length() != 0){
+						possibleLinks.add(someAnchor);
+					}
+				}
 			}
 		}
-		// If we 404
-		if(noPage){
-			System.out.println("NO DATA");
-		}
-		else{
-			//<p><b>Frozen</b> may refer to:</p>
-			boolean disambigPage = doc.toString().contains(String.format("<p><b>%s</b> may refer to:</p>", film));
 
-
-			if(disambigPage){
-				for(Element e : doc.body().select("li")){
-					for(Element anchor : e.select("a")){
-						if(anchor.toString().matches(".*[F|f]ilm.*")){
-							candidates.add(anchor.attr("href"));
+		/*
+		 * Step 3: The searching and sorting
+		 * So now that we've got our anchors, we want to sort them after the probability that they are the link we want to get.
+		 * Then we check if the first link actually refers to the film we're after. If it *does*, we're going to go hunting for the script-page.
+		 * If it *doesn't* we're screwed, there's no script.
+		 */
+		findBest(possibleLinks, FILM, YEAR);
+		String link = String.format("http://%s%s",
+									HOST,
+									possibleLinks.get(0).attr("href"));
+		if(possibleLinks.get(0).toString().contains(FILM)){
+			/*
+			 * Step 4: The frustrationing.
+			 * Of course, the link to the script is not a link to the script. It's a link to some bullshit page
+			 * where people can tell us what they think of the movie, and has links to desktop wallpapers and stuff like that.
+			 * So we need to find the link to the actual script. Remember kids, your link might say it's the script, but it's probably not.
+			 * Why? My guess is to show more commercials. It's not a dumb idea, but it's frustrating.
+			 * We find the link by grepping again.
+			 * Because marking up the special link with some special attribute would be too hard for the webmaster I guess.
+			 */
+			Document movieBaitPage = Jsoup.connect(link).get();
+			String pretext = "Read ";   /* So basically, the way this bs works is that the text in the <a> tag will read “Read "<movie title>" Script”. */
+			String context = " Script"; /* I made a funny! :D */
+			
+			for(Element a : movieBaitPage.select("a")){
+				if(a.text().contains(pretext) && a.text().contains(context)){
+					/* 
+					 * This is a descriptive name for a webpage that has two <html> tags 
+					 * and consists entirely of tables nested within tables.
+					 * It also closes tags more than once at times.
+					 * I have no idea how JSoup manages to parse this crap.
+					 * I'm sorry for putting it through this.
+					 */
+					Document unholyGibberish = Jsoup.connect(String.format("http://%s%s", HOST, a.attr("href"))).get();
+					for(Element td : unholyGibberish.select("td")){
+						/* This is sort of a lie. This webpage has no class. *Badumpsh.wav* */
+						if(td.hasAttr("class") && td.attr("class").equalsIgnoreCase("scrtext")){
+							Map<String, Integer> script = Tools.wordsToFrequencyMap(td.text());
+							return script;
 						}
 					}
 				}
-
-				String best = String.format("http://%s%s", wikipediaDomain, bestUrl(candidates, year));
-				doc = Jsoup.connect(best).get();
 			}
-			
-			/*
-			 * So now we've got a page. How do we get the text out of it?
-			 * We grab all the paragraphs, and remove all the references, they're of no import.
-			 * Then we replace all non-word characters with space, and split on whitespace.
-			 * I WISH I HAD JAVA 8 FOR THIS.
-			 * PLEASE BE CAN IT BE STREAMS TIEM SOON PLOX?
-			 */
-			
-			for(String hopeFullyWord : doc.select("p").text().replaceAll("\\[\\d+\\]", " ").replaceAll("[^\\w]", " ").split("\\s+")){
-				String cand = hopeFullyWord.toLowerCase();
-				if(!safeWords.contains(cand) && !cand.matches("^\\d+$")){
-					if(!wordFrequency.containsKey(cand)){
-						wordFrequency.put(cand, Integer.valueOf(1));
-					}
-					else{
-						wordFrequency.put(cand,
-								          wordFrequency.get(cand) + 1);
-					}
-				}
-			}
-			
-			System.out.println(wordFrequency);
 		}
+		/* Or we didn't find any links. In that case, we have no script to return
+		 * so we just return an empty hashmap. */
+		return new HashMap<>(); 
 	}
 	
-	
-	
-	
-	
-	/**
-	 * Escapes some of the characters for wikipedia. This is not necessary, but might lighten the load on their servers somewhat.
-	 * @param escapeMe The string that is to be escaped, may never be null.
-	 * @return the string with offending characters escaped.
-	 */
-	public static String wikiEscapeChars(String escapeMe){
-		return escapeMe.replace(' ', '_');
-	}
-	/**
-	 * Finner den beste strengen som representerer en URL fra en liste URLer.
-	 * Den gjør dette vha sortering som følger:
-	 * Dersom du er fra samme år som filmen får du en haug med poeng.
-	 * Dersom du er kortere en en annen film, så får du også poeng.
-	 * Den med mest poeng er den beste filmen.
-	 * 
-	 * Det er ordnet slik at du ALLTID får fler poeng for å være fra korrekt år, enn for å være kort.
-	 * 
-	 * @param urls urlene som skal velges mellom
-	 * @param year året filmen kom ut
-	 * @return urlen med høyest poengsum
-	 */
-	public static String bestUrl(List<String> urls, final String year){
-		Comparator<String> cmp = new Comparator<String>() {
-			@Override
-			public int compare(String s1, String s2) {				
-				int s1Score = 0, s2Score = 0;
-				// Make the score for hitting the correct year high enough that it cannot be dwarfed by string lengths.
-				// Note that if strings get long enough, this won't help us, but since valid URLs are defined with a maximum length, we should be good here.
-				int yearScore = s1.length() + s2.length();
-				s1Score -= s1.length();
-				s2Score -= s2.length();
-				if(s1.contains(year)){
-					s1Score += yearScore;
-				}
-				if(s2.contains(year)){
-					s2Score += yearScore;
-				}				
-				return s2Score - s1Score;
-			}
+	/* This looks a lot like the same sort of thing in Wikindexer, except Wikipedia is a good site. */
+	private static void findBest(List<Element> links, final String title, final String year){
+		Collections.sort(links, new Comparator<Element>() {
 
-		};
-		Collections.sort(urls, cmp);
-		return urls.get(0);
+			@Override
+			public int compare(Element e1, Element e2) {
+				int e1Score = 0,
+					e2Score = 0;
+				
+				int maxBonus = e1.text().length() + e2.text().length();
+				/* Shortest text is more likely to be correct, unless the search engine is truly retarded.
+				 * tbh, there is a real possibility that this is indeed the case, but we still need a tiebreaker. ;_;  */
+				e1Score += maxBonus - e1.text().length();
+				e2Score += maxBonus - e2.text().length();
+				
+				if(e1.toString().contains(year)){
+					e1Score += maxBonus;
+				}
+				if(e2.toString().contains(year)){
+					e2Score += maxBonus;
+				}
+				if(e1.toString().contains(title)){
+					e1Score += maxBonus;
+				}
+				if(e2.toString().contains(title)){
+					e2Score += maxBonus;
+				}
+				return e2Score - e1Score; // The smallest item goes first, and the ones with the highest score should go first. Therefore this inversion
+			}
+		});
 	}
+	
 }

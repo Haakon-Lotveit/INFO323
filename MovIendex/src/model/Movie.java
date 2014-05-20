@@ -1,42 +1,26 @@
 package model;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.impl.DefaultBHttpClientConnection;
-import org.apache.http.message.BasicHttpRequest;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.HttpProcessor;
-import org.apache.http.protocol.HttpProcessorBuilder;
-import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.protocol.RequestConnControl;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.protocol.RequestExpectContinue;
-import org.apache.http.protocol.RequestTargetHost;
-import org.apache.http.protocol.RequestUserAgent;
-import org.apache.http.util.EntityUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import download.IMSDBIndexer;
+import download.OMDBRequest;
 import download.Tools;
 import download.Wikindexer;
 import evil.Globals;
-import experimentation.HTTPTesting.OmdbRequestBuilder;
 
 public class Movie {
 	private Map<String, String> data;
 	private Map<String, Map<String, Integer>> wordFrequencies;
 	private Map<String, Integer> sumWordFrequencies;
-	
+
 	private String summary;
 
 	/**
@@ -46,9 +30,9 @@ public class Movie {
 		this.data = new HashMap<>();
 		this.wordFrequencies = new HashMap<>();
 		this.sumWordFrequencies = new HashMap<>();
-		
+
 	}
-	
+
 	/**
 	 * Creates a new movie with no data.
 	 * You must add data with calls to {@link Movie#setData(String, String) setData(String, String)}
@@ -57,7 +41,7 @@ public class Movie {
 	public Movie(){
 		init();
 	}
-	
+
 	/**
 	 * Lets you get the word-frequencies of the entire movie.
 	 * This is the map of all frequencies of all words, from all sources.
@@ -67,7 +51,7 @@ public class Movie {
 	public Map<String, Integer> getWordFrequencies(){
 		return sumWordFrequencies;
 	}
-	
+
 	/**
 	 * Let's you get a wordFrequency from a specific source.
 	 * Currently supported are "en.wikipedia.org" for wikipedia data </br>
@@ -82,7 +66,7 @@ public class Movie {
 		}
 		return new HashMap<>();
 	}
-	
+
 	/**
 	 * Sets any piece of metadata of this movie.
 	 * @param name the name of the metadata. Some names are required by the Movie object in order to download information from the internet,
@@ -94,7 +78,7 @@ public class Movie {
 		this.data.put(name, datum);
 		return this;
 	}
-	
+
 	/**
 	 * Sets the magical metadata known as the abstract.
 	 * If you use the normal {@link Movie#download() download()} method, then
@@ -107,7 +91,7 @@ public class Movie {
 		this.summary = summary;
 		return this;
 	}
-	
+
 	/**
 	 * Returns the magical metadata known as the abstract.
 	 * Will be removed at some point.
@@ -116,7 +100,7 @@ public class Movie {
 	public String getAbstract(){
 		return summary;
 	}
-	
+
 	/**
 	 * Gets a particular piece of metadata.
 	 * @param name the name of the metadata. Use {@link Movie#getDataNames()} if you need to programmatically get the list of them.
@@ -126,7 +110,7 @@ public class Movie {
 	public String getData(String name){
 		return this.data.get(name);
 	}
-	
+
 	/**
 	 * This is useful if you want to know WHAT metadata is available, although not necessarily what it is.
 	 * If you want to iterate over all the metadata, you could do something like 
@@ -137,7 +121,7 @@ public class Movie {
 	public Collection<String> getDataNames(){
 		return this.data.keySet();	
 	}
-	
+
 	/**
 	 * This method will be renamed and made private in the future. Use at own risk.
 	 * This downloads information from wikipedia, and assumes that the year and title variables in the data-map have been set.
@@ -155,50 +139,50 @@ public class Movie {
 		}
 		return this;
 	}
-	
+
 	@Override
 	public String toString(){
 		return new StringBuilder()
-			.append("[Movie: <Data: ")
-			.append(stringifyMap(this.data))			
-			.append("> ")
-			.append(addFrequenciesString(this.wordFrequencies))
-			.append("]")
-			.toString();
+		.append("[Movie: <Data: ")
+		.append(stringifyMap(this.data))			
+		.append("> ")
+		.append(addFrequenciesString(this.wordFrequencies))
+		.append("]")
+		.toString();
 	}
-	
+
 	/**
 	 * Creates a prettyprinted version of the word-frequency maps.
 	 * @param freqs wordFreqiencies, pretty much. It's parametrized just to keep things flexible,
-     * 		  so that if I ever need to massage other maps into this form, I could.
-     * 
+	 * 		  so that if I ever need to massage other maps into this form, I could.
+	 * 
 	 * @return a prettyprinted string of the word-frequencies.
 	 */
 	private String addFrequenciesString(Map<String, Map<String, Integer>> freqs){
 		StringBuilder sb = new StringBuilder().append("<Frequencies:");
-		
+
 		for(String sourceName : freqs.keySet()){
 			int sumWords = 0;
 			for(Integer i : freqs.get(sourceName).values()){
 				sumWords += i;
 			}
 			sb.append(String.format(" %s (%d words)",
-					                sourceName,
-					                sumWords));
+					sourceName,
+					sumWords));
 		}
-		
+
 		/* The sum of all frequencies */
 		int sum = 0;
 		for(Integer frequency : sumWordFrequencies.values()){
 			sum += frequency;
 		}
 		sb.append(". Altogether ").append(sum).append(" words>");
-		
-		
+
+
 		return sb.toString();
 	}
-	
-	
+
+
 	/**
 	 * This creates a better looking string of all the metadata in the movie-object.
 	 * @param map The map to stringify (the only real candidate here is the data map. (Map:String→String)
@@ -211,7 +195,7 @@ public class Movie {
 		}
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Takes a frequency-map and adds its contents to the sum of frequencies map (sumWordFrequencies : Map<String, Integer>)
 	 * @param freq the frequency map to add, cannot be null. If it's null it will crash. Nulls are evil. Do not be evil, that's Google's job.
@@ -219,22 +203,23 @@ public class Movie {
 	private void addToSumWordFrequencies(Map<String, Integer> freq){
 		for(String word : freq.keySet()){
 			int frequency = freq.get(word);
-			
+
 			if(sumWordFrequencies.containsKey(word)){
 				frequency += sumWordFrequencies.get(word);
 			}
-			
+
 			sumWordFrequencies.put(word, frequency);
 		}
 	}
 
 	public Movie download() throws Exception {
-		String req = new OmdbRequestBuilder().title(this.getData("title"))
-				.year(this.getData("year"))
-				.getLongPlot()
-				.returnJSON()
-				.getTomatoData()
-				.request();
+		String req = new OMDBRequest()
+		.title(this.getData("title"))
+		.year(this.getData("year"))
+		.getLongPlot()
+		.returnJSON()
+		.getTomatoData()
+		.call();
 		//		http://www.omdbapi.com/?t=Frozen&y=2013&plot=full&tomatoes=false&response=JSON
 
 		Map<String,String> json = new HashMap<String,String>();
@@ -245,165 +230,98 @@ public class Movie {
 					new TypeReference<HashMap<String,String>>(){});
 
 		} catch (Exception e) {
+			System.out.println(req);
 			e.printStackTrace();
 		}
 
-		Map<String, Integer> rottenTomatoes = new HashMap<>();
-		Map<String, Integer> omdbPlot = new HashMap<>();
 		this.setAbstract(json.get("tomatoConsensus"))
-		 .setData("website", json.get("Website"))
-		 .setData("poster_url", json.get("Poster"))
-		 .setData("age-rating", json.get("Rated"))
-		 .setData("imdbRating", json.get("imdbRating"))
-		 .setData("actors", json.get("Actors"))
-		 .setData("metascore", json.get("Metascore"))
-		 .setData("tomato-meter", json.get("tomatoMeter"))
-		 .setData("tomato-user-rating", json.get("tomatoUserRating"))
-		 .setData("genre", json.get("Genre"))
-		 .setData("awards", json.get("Awards"))
-		 .setData("director", json.get("Director"))
-		 .setData("tomato-rating", json.get("tomatoRating"))
-		 .setData("runtime", json.get("Runtime"))
-		 .setData("writer", json.get("Writer"))
-		 .setData("production", json.get("Production"))
-		 .setData("language", json.get("Language"))
-		 .setData("tomato-user-meter", json.get("tomatoUserMeter"))
-		 .downloadWikipedia();
-		Map<String, Integer> plotFreq = Tools.wordsToFrequencyMap(json.get("Plot"));
-		Map<String, Integer> consensusFreq = Tools.wordsToFrequencyMap(json.get("tomatoConsensus"));
+		.setData("website",    		   json.get("Website"))
+		.setData("poster_url", 		   json.get("Poster"))
+		.setData("age-rating", 		   json.get("Rated"))
+		.setData("imdbRating", 		   json.get("imdbRating"))
+		.setData("actors",     		   json.get("Actors"))
+		.setData("metascore",    	   json.get("Metascore"))
+		.setData("tomato-meter",       json.get("tomatoMeter"))
+		.setData("tomato-user-rating", json.get("tomatoUserRating"))
+		.setData("genre",              json.get("Genre"))
+		.setData("awards",			   json.get("Awards"))
+		.setData("director",		   json.get("Director"))
+		.setData("tomato-rating",	   json.get("tomatoRating"))
+		.setData("runtime", 		   json.get("Runtime"))
+		.setData("writer", 			   json.get("Writer"))
+		.setData("production",		   json.get("Production"))
+		.setData("language",		   json.get("Language"))
+		.setData("tomato-user-meter",  json.get("tomatoUserMeter"))
+		/* Since we're searching, this ensures that we update wrong guesses */
+		.setData("title",			   json.get("Title"))
+		.setData("year",			   json.get("Year"))
+		.downloadWikipedia();
+
+		/* TODO: Make this a proper method */
+		Map<String, Integer> scriptFreq = new IMSDBIndexer(this.getData("title"), this.getData("year")).download();
+		this.wordFrequencies.put("script", scriptFreq);
+		this.addToSumWordFrequencies(scriptFreq);
 		
+		Map<String, Integer> plotFreq = Tools.wordsToFrequencyMap(json.get("Plot"));
+		this.wordFrequencies.put("plot", plotFreq);
+		this.addToSumWordFrequencies(plotFreq);
+
+		Map<String, Integer> consensusFreq = Tools.wordsToFrequencyMap(json.get("tomatoConsensus"));
+		this.wordFrequencies.put("tomato-consensus", consensusFreq);
+		this.addToSumWordFrequencies(consensusFreq);
+
 		return this;
 	}
 
-
-
-	/* TODO: Move these into javadocs for the class.
-	s (NEW!) 	string (optional) 	title of a movie to search for
-	i 	string (optional) 	a valid IMDb movie id
-	t 	string (optional) 	title of a movie to return
-	y 	year (optional) 	year of the movie
-	r 	JSON, XML 	response data type (JSON default)
-	plot 	short, full 	short or extended plot (short default)
-	callback 	name (optional) 	JSONP callback name
-	tomatoes 	true (optional) 	adds rotten tomatoes data 
-	 */
-	/**
-	 * A builder that returns a valid request for the OMDB api.
-	 * This does not allow you to build ALL the requests you may want,
-	 * but sticks to what is deemed an acceptable amount.
-	 * (You can't set the s-parameter, and it doesn't take an IMDB identifier)
-	 * 
-	 * It's made for an INFO323 project, 
-	 * and is not supposed to be some great greatness that solves everything for everyone.
-	 * (IOW, if it doesn't work for you, build your own builder. ^_^)
-	 * 
-	 * @author Haakon Løtveit (email: haakon.lotveit@student.uib.no)
-	 *
-	 */
-	public static class OmdbRequestBuilder {
-		String title, year;
-		boolean tomatoData, callbackName, longPlot, returnXML;
-
-		public OmdbRequestBuilder(){
-			title = year = null;
-			tomatoData = longPlot = returnXML = false;
-		}
-
-		public boolean validate(){
-			return (null != title &&
-					null != year);
-		}
-
-		public OmdbRequestBuilder getTomatoData(){
-			this.tomatoData = true;
-			return this;
-		}
-
-		public OmdbRequestBuilder dontGetTomatoData(){
-			this.tomatoData = false;
-			return this;
-		}
-
-		public OmdbRequestBuilder getShortPlot(){
-			this.longPlot = false;
-			return this;
-		}
-
-		public OmdbRequestBuilder getLongPlot(){
-			this.longPlot = true;
-			return this;
-		}
-
-		public OmdbRequestBuilder returnXML(){
-			this.returnXML = true;
-			return this;
-		}
-
-		public OmdbRequestBuilder returnJSON(){
-			this.returnXML = false;
-			return this;
-		}
-
-		public OmdbRequestBuilder title(String title){
-			this.title = title;
-			return this;
-		}
-
-		public OmdbRequestBuilder year(String year){
-			this.year = year;
-			return this;
-		}
-
-		public String request() throws Exception {
-			if(!validate()){
-				throw new Exception("you haven't instantiated everything!");
-			}
-			String host = "www.omdbapi.com";
-			String target = String.format("/?t=%s&y=%s&plot=%s&tomatoes=%s&response=%s", 
-					title,
-					year,
-					longPlot?   "full" : "short",
-					tomatoData? "true" : "false",
-					returnXML?  "XML"  : "JSON");
-			
-			String req = Tools.get(host, 80, target);
-			return req;
-
-		}
-	}
-	
-	
 	/**
 	 * This creates a movie-object of the Disney-move Frozen from 2013, and prints it to the standard out.
 	 * @param args are ignored.
 	 */
 	public static void main(String[] args) throws Exception {
-		Movie frozen = Movie.makeSampleMovie();
-		
-		System.out.println(frozen);
-		
-		System.out.println("Type the word you want the frequency for. !exit ends the program");
+		//		Movie frozen = Movie.makeSampleMovie();
+		//		
+		//		System.out.println(frozen);
+		//		
+		//		System.out.println("Type the word you want the frequency for. !exit ends the program");
+		//		try(Scanner kb = new Scanner(System.in)){
+		//			String word = "";
+		//			while(!word.equals("!exit")){
+		//				word = kb.nextLine().trim().toLowerCase();
+		//				System.out.println(frozen.getWordFrequencies().get(word));
+		//			}
+		//		}
+
 		try(Scanner kb = new Scanner(System.in)){
-			String word = "";
-			while(!word.equals("!exit")){
-				word = kb.nextLine().trim().toLowerCase();
-				System.out.println(frozen.getWordFrequencies().get(word));
+			while(true){
+				System.out.print("Movie title: ");
+				String title = kb.nextLine().trim();
+				System.out.print("Released year: ");
+				String year = kb.nextLine().trim();
+
+				System.out.printf("Downloading movie: %s (%s)%n", title, year);
+				title = URLEncoder.encode(title, "UTF-8");
+				Movie m = new Movie()
+				.setData("title", title)
+				.setData("year", year)
+				.download();
+				System.out.println(m);
+
+				System.out.println(m.getWordFrequencyFrom("en.wikipedia.org").size());
 			}
 		}
-		
 	}
-	
+
 	/**
 	 * Create a sample movie object for demo-purposes.
 	 * 
 	 * @return a movie-object based on Disney's "Frozen" from 2013. 
-	 * @throws Exception if download borks.
+	 * @throws Exception if download borks up.
 	 */
 	public static Movie makeSampleMovie() throws Exception{
 		return new Movie().setData("title"   , "Frozen")
-						  .setData("studio"  , "Walt Disney Pictures")
-						  .setData("year"    , "2013")
-						  .setData("producer", "Peter Del Vecho")
-						  .download();
+				.setData("studio"  , "Walt Disney Pictures")
+				.setData("year"    , "2013")
+				.setData("producer", "Peter Del Vecho")
+				.download();
 	}
 }

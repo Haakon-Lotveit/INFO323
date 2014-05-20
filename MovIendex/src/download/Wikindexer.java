@@ -55,14 +55,6 @@ public class Wikindexer implements Indexer {
 				doc = Jsoup.connect(best).get();
 			}
 			
-			/*
-			 * So now we've got a page. How do we get the text out of it?
-			 * We grab all the paragraphs, and remove all the references, they're of no import.
-			 * Then we replace all non-word characters with space, and split on whitespace.
-			 * I WISH I HAD JAVA 8 FOR THIS.
-			 * PLEASE BE CAN IT BE STREAMS TIEM SOON PLOX?
-			 */
-			
 			String indexThis = doc.select("p").text().replaceAll("\\[\\d+\\]", " ");
 			wordFrequency = Tools.wordsToFrequencyMap(indexThis);
 			

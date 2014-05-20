@@ -1,35 +1,26 @@
 package download;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import static evil.Globals.safeWords;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.impl.DefaultBHttpClientConnection;
-import org.apache.http.message.BasicHttpRequest;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.HttpProcessor;
-import org.apache.http.protocol.HttpProcessorBuilder;
-import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.protocol.RequestConnControl;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.protocol.RequestExpectContinue;
-import org.apache.http.protocol.RequestTargetHost;
-import org.apache.http.protocol.RequestUserAgent;
-import org.apache.http.util.EntityUtils;
-
-import static evil.Globals.safeWords;
 public class Tools {
 
 	public static Map<String, Integer> wordsToFrequencyMap(String words){
 		Map<String, Integer> freq = new HashMap<>();
 		String onlyNumbers = "^\\d+$"; // Matches a string that consists of solely numerals.
-		
-		for(String hopeFullyWord : words.replaceAll("[^\\w]", " ").split("\\s+")){
+		/* Some basic translation of apostrophic words into something that makes sense, and is then caught by the stop-word
+		 * filter instead is happening here. It's not real stemming, and should be put in a config-file,
+		 * and run as its own method, but I don't have the time right now */
+		for(String hopeFullyWord : words.replaceAll("n't", " not ")
+										.replaceAll("'s", " ") // is is a stop-word and the s-genitive is but a suffix to a morphological root anyway.
+										.replaceAll("I'm", "I am")
+										.replaceAll("'ll", " will")
+										.replaceAll("'re", " are ")
+										.replaceAll("'d", " had ")
+										.replaceAll("'ve", " have ")
+				                        .replaceAll("[^\\w]", " ")
+				                        .split("\\s+")){
 			String cand = hopeFullyWord.toLowerCase();
 			if(!safeWords.contains(cand) && !cand.matches(onlyNumbers)){
 				if(!freq.containsKey(cand)){
@@ -43,48 +34,4 @@ public class Tools {
 
 		return freq;
 	}
-	
-	/**
-	 * Copypasted from the HttpCore tutorial.
-	 * @param hostname
-	 * @param port 
-	 * @param target
-	 * @return
-	 * @throws UnknownHostException
-	 * @throws IOException
-	 * @throws HttpException
-	 */
-	public static String get(String hostname, int port, String target) throws UnknownHostException, IOException, HttpException {
-		HttpProcessor httpproc = HttpProcessorBuilder.create()
-				.add(new RequestContent())
-				.add(new RequestTargetHost())
-				.add(new RequestConnControl())
-				.add(new RequestUserAgent("Test/1.1"))
-				.add(new RequestExpectContinue(true)).build();
-
-		HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
-
-		HttpCoreContext coreContext = HttpCoreContext.create();
-		HttpHost host = new HttpHost(hostname, port);
-		coreContext.setTargetHost(host);
-
-		String responseEntity = "ERROR";
-		try(DefaultBHttpClientConnection conn = new DefaultBHttpClientConnection(8 * 1024)){
-
-			if (!conn.isOpen()) {
-				Socket socket = new Socket(host.getHostName(), host.getPort());
-				conn.bind(socket);
-			}
-			BasicHttpRequest request = new BasicHttpRequest("GET", target);
-
-			httpexecutor.preProcess(request, httpproc, coreContext);
-			HttpResponse response = httpexecutor.execute(request, conn, coreContext);
-			httpexecutor.postProcess(response, httpproc, coreContext);
-
-			responseEntity = EntityUtils.toString(response.getEntity());
-		}
-
-		return responseEntity;
-	}
-
 }
