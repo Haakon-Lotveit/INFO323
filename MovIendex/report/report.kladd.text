@@ -1,12 +1,66 @@
-Målet:
-Skap en scraper som kan scrape filmer, og bygge søkbare indekser over disse filmene.
-Data hentes fra Wikipedia, IMDB, OMDB, RottenTomatoes, og evt. fler.
+\documentclass[11pt]{article}
+\usepackage{cite}
+\usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 
-Problemer underveis:
-IMDB har en restriktiv lisens for å brukes, for å unngå juridiske overtramp, forkastes dermed IMDB, og OMDB/RT brukes istedenfor.
+% GANT plott, fått fra KT-Nilsen.
+\usepackage{tikz}
+\usepackage{gantt}
+% /GANT
+\begin{document}
 
-Utfordringer generelt sett:
-Hvordan skal indekser lagres? Filformat/Databaseskjema.
-Hvordan skal data parses ut av de forskjellige nettstedene?
-Hvilke data skal brukes?
-Hvilke stoppord skal brukes?
+\title{Prosjekt INFO 323}
+\author{Stud.nr. 187193}
+\date{22. mai 2014}
+\maketitle
+
+\section{Introduksjon}
+\subsection{Prosjektet}
+\subsection{Målet}
+\subsection{Nytteverdien}
+\subsection{Utfordringer}
+\section{Teknisk forklaring}
+\subsection{TF, TF-IDF}
+\subsection{Scraping}
+\subsection{Crawling}
+\subsection{Initial list}
+\subsection{Robots.txt}
+\subsection{Parsing (HTML)}
+\section{Spesifikt for prosjektet}
+\subsection{Programmeringsstil}
+\subsection{TF vs TF-IDF}
+\subsection{Kodestil}
+\subsection{Kilder}
+\subsection{Nytteverdi}
+\section{Oppsummeringer}
+\subsection{Hva som ble gjort}
+\subsection{Ting som gikk galt}
+\subsection{Ting som gikk bra}
+\subsection{Gjenstående}
+\subsection{Planer for ting}
+\subsubsection{Startliste}
+\subsubsection{Abonnere på nye filmer}
+\subsubsection{Abonnere på nye filmskript}
+\subsubsection{I/O formater}
+\subsection{Hvorfor dette ble bra til slutt likevel}
+
+%Målet:
+%Skap en scraper som kan scrape filmer, og bygge søkbare indekser over disse filmene.
+%Data hentes fra Wikipedia, IMDG, OMDB, RottenTomatoes, og evt. fler.
+%
+%Problemer underveis:
+%IMDB har en restriktiv lisens for å brukes, for å unngå juridiske overtramp, forkastes dermed IMDB, og OMDB/RT brukes istedenfor.
+%
+%Utfordringer generelt sett:
+%Hvordan skal indekser lagres? Filformat/Databaseskjema.
+%Hvordan skal data parses ut av de forskjellige nettstedene?
+%Hvilke data skal brukes?
+%Hvilke stoppord skal brukes?
+%Indexing and goals:
+%Since documents will be registered relatively rarely\footnote{In comparison to general purpose web-crawlers}, indexing time is not considered a big issue.
+%Nor will we care too much about the index-size. Although the book says that it should grow linearly with the size of the data, this is a truth with certain modifications in our case: A movie here does not contain the movie itself, only metadata about it. Therefore we do not need to consider mass scaling issues.
+%
+%A cursory search of IMDB, gives us a ballpark estimate of 500 thousand to 2,5 million movies made in total. If this index is to fit in memory of a system with say, ~5gb of core memory available to it, that gives us that in memory the memory devoted to each movie entry in total could not be larger than 1-5kb. This either means heavy constraints on the indexing, paging to disk, or loading from disk only parts of movies. There are systems that lets us page efficiently, such as a RDBMS like MySQL, PostgreSQL, or other free systems. These systems would be obvious matches. Even though they don't scale well beyond the petabyte, it is unlikely that such storage capacity will be needed.
+%
+%Inverted indexes do not make much sense in our case, since the metadata does not generally consist of large text. The exception to this would be the abstract. However, there is no reason to create inverted indexes for everything.

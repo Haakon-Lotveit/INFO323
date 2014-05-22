@@ -14,7 +14,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 public class Wikindexer implements Indexer {
-
+	public static void main(String[] args) throws Exception {
+		System.out.println(new Wikindexer().indexMovie("Frozen", "2013", evil.Globals.safeWords));
+	}
+	
 	@Override
 	public Map<String, Integer> indexMovie(String film, String year, Set<String> safeWords) throws IOException {
 		String wikipediaDomain = "en.wikipedia.org";
